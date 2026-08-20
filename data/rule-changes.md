@@ -1,6 +1,6 @@
 # T3 resolution-rule change log
 
-Markets with more than one capture: 5034
+Markets with more than one capture: 5276
 Rule-digest movements detected: 0 (0 material, 0 cosmetic)
 
 Every count here is a LOWER BOUND. The crawl runs every six hours, so a rule that changed and

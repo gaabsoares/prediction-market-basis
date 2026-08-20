@@ -1,0 +1,80 @@
+{
+  "acquisition": {
+    "auth": "none; every endpoint above is a public unauthenticated read",
+    "endpoints": {
+      "clobBook": "https://clob.polymarket.com/book",
+      "clobBooks": "https://clob.polymarket.com/books",
+      "events": "/trade-api/v2/events",
+      "exchangeStatus": "/trade-api/v2/exchange/status",
+      "gammaEvents": "https://gamma-api.polymarket.com/events",
+      "gammaMarketBySlug": "https://gamma-api.polymarket.com/markets/slug/{slug}",
+      "gammaMarkets": "https://gamma-api.polymarket.com/markets",
+      "market": "/trade-api/v2/markets/{ticker}",
+      "markets": "/trade-api/v2/markets",
+      "orderbook": "/trade-api/v2/markets/{ticker}/orderbook",
+      "series": "/trade-api/v2/series/{series_ticker}"
+    },
+    "runner": "github-actions:Linux",
+    "tool_version": "0.1.0"
+  },
+  "analysis_window": {
+    "end": "2026-08-19T13:05:41.936Z",
+    "hours": 1.34,
+    "start": "2026-08-19T11:45:30.313Z",
+    "utc_days": 1
+  },
+  "book_capture_cycles": [
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-19T11:45:43.975Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-19T12:35:44.169Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-19T12:48:20.501Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-19T13:05:41.936Z"
+    }
+  ],
+  "book_depth_levels_per_side": 10,
+  "book_snapshots": 120,
+  "depth_statement": "The divergence series is the shallow artifact in this release and accrues with each capture cycle. The basis-pair book and the rule-change log are the mature ones.",
+  "distinct_markets_with_a_book": {
+    "kalshi": 10,
+    "polymarket": 10
+  },
+  "divergence_series": {
+    "basis_pairs_with_a_book_on_one_venue_only": 0,
+    "basis_pairs_with_books_on_both_venues": 0,
+    "basis_pairs_with_no_book_at_all": 72,
+    "cross_venue_price_series_available": false,
+    "note": "A divergence series requires both legs of a pair snapshotted at the same instant. Book selection is liquidity-ranked per venue, which is not a match and was never meant to be read as one. Until the both-venues count is above zero there is no cross-venue price series in this dataset, whatever the raw snapshot count says."
+  },
+  "generated_from": "the committed capture corpus for the analysis window only",
+  "market_capture_cycles": [
+    {
+      "captured_at": "2026-08-19T11:45:30.313Z",
+      "market_records_appended": 6000
+    },
+    {
+      "captured_at": "2026-08-19T12:35:32.900Z",
+      "market_records_appended": 4029
+    },
+    {
+      "captured_at": "2026-08-19T12:48:05.975Z",
+      "market_records_appended": 3513
+    },
+    {
+      "captured_at": "2026-08-19T13:05:27.804Z",
+      "market_records_appended": 3349
+    }
+  ],
+  "run_id": "97946cfda9a9",
+  "scheduled_cadence": "every 6 hours on GitHub-hosted US runners; the cycles above include manual reruns, so they are not evenly spaced",
+  "schema": "t3.series-status.v1"
+}

@@ -3,8 +3,8 @@
  * Re-checks this dataset against its own internal invariants, from `data/` alone.
  *
  * No network, no dependencies, no access to the pipeline that produced the data. Every check below
- * is one an outside reader can repeat by hand on a single record; this script only does it 986
- * times. A check that needs anything not published here does not belong in this file.
+ * is one an outside reader can repeat by hand on a single record; this script only repeats it
+ * once per published record. A check that needs anything not published here does not belong in this file.
  *
  * Usage: node scripts/verify.mjs [--data <dir>] [--quiet]
  */
@@ -292,16 +292,75 @@ check('market metadata covers every published leg', () => {
   for (const m of metadata) {
     if (!needed.has(m.market_key)) fail(`metadata for ${m.market_key} belongs to no published pair`);
     if (!(m.rules_text ?? '').trim()) fail(`${m.market_key} carries no rule text`);
-    if (m.rules_digests_observed.length !== 1) fail(`${m.market_key} saw ${m.rules_digests_observed.length} rule digests`);
+    if (m.rules_digests_observed.length < 1) fail(`${m.market_key} records no rule digest at all`);
+    if (!m.rules_digests_observed.includes(m.rules_digest)) {
+      fail(`${m.market_key} names a current digest it never lists among the ones it observed`);
+    }
     if (m.first_seen > m.last_seen) fail(`${m.market_key} was first seen after it was last seen`);
   }
-  return `${metadata.length} markets, all with rule text, all on a single stable rule digest`;
+  const stable = metadata.filter((m) => m.rules_digests_observed.length === 1).length;
+  return `${metadata.length} markets, all with rule text; ${stable} on one rule digest, ${metadata.length - stable} whose rule moved`;
 });
 
-check('the rule-change log and the metadata agree that nothing moved', () => {
+/**
+ * A market whose resolution rule MOVED is the single most valuable thing this dataset can catch, so
+ * the check on it has to be a consistency check and not a stability check. An earlier version of this
+ * file required every market to sit on exactly one digest, which would have rejected the dataset the
+ * first time it recorded the event it exists to record.
+ *
+ * What is actually checkable from these two files alone: for each published market, the changes
+ * logged against it must form an unbroken walk through the digests its metadata says it was seen
+ * carrying, and that walk must end on the digest it carries now. Reverts are allowed - a venue may
+ * undo an edit, and the walk simply returns to a digest it already visited.
+ */
+check('the rule-change log and the metadata tell the same story, market by market', () => {
+  const byMarket = new Map();
+  for (const c of ruleChanges) {
+    const key = `${c.venue}:${c.venue_market_id}`;
+    if (!byMarket.has(key)) byMarket.set(key, []);
+    byMarket.get(key).push(c);
+  }
+
+  const short = (digest) => String(digest).slice(0, 12);
+  let logged = 0;
+
+  for (const m of metadata) {
+    const walk = byMarket.get(m.market_key) ?? [];
+    const observed = new Set(m.rules_digests_observed);
+    logged += walk.length;
+
+    if (walk.length === 0) {
+      if (observed.size > 1) {
+        fail(
+          `${m.market_key} was seen carrying ${observed.size} rule digests but the log records no change for it, so the evidence chain is broken (a capture whose rule text was unreadable does this)`,
+        );
+      }
+      continue;
+    }
+
+    walk.forEach((c, i) => {
+      for (const digest of [c.previous_digest, c.current_digest]) {
+        if (!observed.has(digest)) fail(`${m.market_key}: the log names digest ${short(digest)}, which the metadata never observed`);
+      }
+      const next = walk[i + 1];
+      if (next && next.previous_digest !== c.current_digest) {
+        fail(`${m.market_key}: the log leaves ${short(c.current_digest)} and resumes at ${short(next.previous_digest)}, with no change accounting for the step between them`);
+      }
+    });
+
+    const named = new Set(walk.flatMap((c) => [c.previous_digest, c.current_digest]));
+    for (const digest of observed) {
+      if (!named.has(digest)) fail(`${m.market_key}: the metadata observed digest ${short(digest)} that no logged change accounts for`);
+    }
+
+    const last = walk[walk.length - 1];
+    if (last.current_digest !== m.rules_digest) {
+      fail(`${m.market_key}: the log ends at ${short(last.current_digest)} but the market's current rule digest is ${short(m.rules_digest)}`);
+    }
+  }
+
   const moved = metadata.filter((m) => m.rules_digests_observed.length > 1).length;
-  if (ruleChanges.length !== moved) fail(`${ruleChanges.length} logged changes against ${moved} moved digests in the metadata`);
-  return `${ruleChanges.length} rule changes logged, ${moved} digest movements observed`;
+  return `${ruleChanges.length} change(s) logged over the whole capture corpus, ${logged} of them on the ${moved} published market(s) whose rule moved`;
 });
 
 check('series status matches the data it describes', () => {

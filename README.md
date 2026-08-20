@@ -36,6 +36,13 @@ The bases are not asserted from summary fields. Each is witnessed by a phrase in
 published rule text, which is republished here in `data/market-metadata.jsonl`, and
 `scripts/verify.mjs` re-derives the labels on all 1,972 legs against that text, from `data/` alone.
 
+Rule text is the venues' published factual content, carried verbatim because the audit trail
+depends on it; no copyright is claimed over it (see `data/LICENSE`). If a venue objects to
+verbatim republication, the fallback is committed here in advance: the affected `rules_text`
+fields would be replaced by their existing `rules_digest` plus the minimal excerpts the witness
+checks require, and the verifier's text-derivation checks would be rescoped to those excerpts.
+The dataset's claims survive that fallback; only the convenience of full-text auditing is lost.
+
 ## Posture
 
 - **This is a research dataset, not a trading tool.** There is no order code, no signing, no wallet,

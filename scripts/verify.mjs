@@ -121,13 +121,26 @@ function readJsonl(file) {
     });
 }
 
-/** Exact money comparison on the venues' own decimal strings, with no float ever touching a strike. */
-function cents(value) {
-  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(value);
-  if (!match) throw new Error(`not a 2dp decimal string, but ${describe(value)}`);
+/**
+ * Exact money comparison on the venues' own decimal strings, with no float ever touching a strike.
+ * Units are 1/10000 so every captured quotation grid fits: 2 decimals on BTC and ETH, 4 on SOL and
+ * the S&P, 1 on CPI.
+ */
+function gridUnits(value) {
+  const match = /^(-?)(\d+)(?:\.(\d{1,4}))?$/.exec(value);
+  if (!match) throw new Error(`not a decimal string with at most 4 places, but ${describe(value)}`);
   const [, sign, whole, frac = ''] = match;
-  const n = BigInt(whole) * 100n + BigInt((frac + '00').slice(0, 2));
+  const n = BigInt(whole) * 10000n + BigInt((frac + '0000').slice(0, 4));
   return sign === '-' ? -n : n;
+}
+
+/** One quotation tick on the finer of the two legs' own grids, in 1/10000 units. */
+function tickFor(a, b) {
+  const places = (value) => {
+    const match = /^-?\d+(?:\.(\d+))?$/.exec(value);
+    return match?.[1]?.length ?? 0;
+  };
+  return 10n ** BigInt(4 - Math.max(places(a), places(b)));
 }
 
 const basis = readJsonl('basis-pairs.jsonl');
@@ -534,18 +547,19 @@ check('close delta is exactly zero on every basis pair', () => {
   return `${basis.length} pairs on ${closes.size} distinct listed closes`;
 });
 
-check('cent bridge is exact: the Kalshi floor plus one cent is the Polymarket floor', () => {
+check('tick bridge is exact: the Kalshi floor plus one quotation tick is the Polymarket floor', () => {
   for (const r of basis) {
-    const k = cents(r.kalshi.strike.floor);
-    const p = cents(r.polymarket.strike.floor);
-    if (p - k !== 1n) fail(`${r.pair_id}: gap is ${Number(p - k)} cents, not 1`);
+    const k = gridUnits(r.kalshi.strike.floor);
+    const p = gridUnits(r.polymarket.strike.floor);
+    const tick = tickFor(r.kalshi.strike.floor, r.polymarket.strike.floor);
+    if (p - k !== tick) fail(`${r.pair_id}: gap is ${Number(p - k)} grid units, not the one-tick ${Number(tick)}`);
     if (r.kalshi.strike.bound !== 'exclusive' || r.polymarket.strike.bound !== 'exclusive') {
       fail(`${r.pair_id}: a bound is not exclusive (${r.polymarket.strike.bound} / ${r.kalshi.strike.bound})`);
     }
     if (r.polymarket.strike.relation !== r.kalshi.strike.relation) fail(`${r.pair_id}: relations differ`);
     if (r.relation_equal !== true) fail(`${r.pair_id}: relation_equal is not true`);
   }
-  return `${basis.length} pairs, every one exactly one quotation tick apart on a 0.01 grid`;
+  return `${basis.length} pairs, every one exactly one quotation tick apart on its own grid`;
 });
 
 check('degree 1: no market appears in two basis pairs', () => {
@@ -609,9 +623,10 @@ check('the knife-edge caveat fires on exactly the one-tick records', () => {
       continue;
     }
     const isKnife = r.caveats[3].startsWith('threshold knife-edge:');
-    const gap = cents(r.polymarket.strike.floor) - cents(r.kalshi.strike.floor);
-    const oneTick = gap === 1n || gap === -1n;
-    if (isKnife !== oneTick) fail(`${r.pair_id}: knife-edge=${isKnife} but the measured gap is ${Number(gap)} cents`);
+    const gap = gridUnits(r.polymarket.strike.floor) - gridUnits(r.kalshi.strike.floor);
+    const tick = tickFor(r.polymarket.strike.floor, r.kalshi.strike.floor);
+    const oneTick = gap === tick || gap === -tick;
+    if (isKnife !== oneTick) fail(`${r.pair_id}: knife-edge=${isKnife} but the measured gap is ${Number(gap)} grid units against a one-tick ${Number(tick)}`);
     if (isKnife) knife += 1;
   }
   return `${knife} of ${all.length} records are one tick apart and carry knife-edge wording`;

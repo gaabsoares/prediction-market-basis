@@ -4,8 +4,13 @@ A matched book of Polymarket and Kalshi hourly crypto contracts, published with 
 labels each pair, the resolution-rule change log the pairs are read against, and an honest statement
 of how deep the price series behind them actually is.
 
-Run `97946cfda9a9`. Capture window 2026-08-19T11:45:30Z to 2026-08-19T13:05:41Z, four cycles.
-72 basis pairs, 914 related pairs, 272 markets with their verbatim resolution rules.
+The seed release ran as `97946cfda9a9` and emitted 72 basis pairs, 914 related pairs and 272 markets
+with their verbatim resolution rules. Those counts are history: the dataset rolls forward daily, and
+what you are downloading is described by the snapshot block below and by `data/series-status.json`.
+
+<!-- BEGIN T3 CURRENT SNAPSHOT -->
+
+<!-- END T3 CURRENT SNAPSHOT -->
 
 ## The finding
 
@@ -14,7 +19,7 @@ listed-close-aligned pair differs on three distinct bases at once.** That is the
 failure to find one. The pairs are real, the alignment on entity, threshold and listed close is
 exact, and they still are not the same bet.
 
-The three bases, all present simultaneously on every one of the 72 emitted pairs:
+The three bases, all present simultaneously on every emitted pair:
 
 1. **Settlement index.** The Polymarket leg resolves off a single venue's order book (Binance). The
    Kalshi leg resolves off a multi-venue composite (CF Benchmarks' Real-Time Index, BRTI for
@@ -34,7 +39,8 @@ with every pair.
 
 The bases are not asserted from summary fields. Each is witnessed by a phrase in the venue's own
 published rule text, which is republished here in `data/market-metadata.jsonl`, and
-`scripts/verify.mjs` re-derives the labels on all 1,972 legs against that text, from `data/` alone.
+`scripts/verify.mjs` re-derives the labels on every published leg against that text, from `data/`
+alone, on whatever book is current.
 
 Rule text is the venues' published factual content, carried verbatim because the audit trail
 depends on it; no copyright is claimed over it (see `data/LICENSE`). If a venue objects to
@@ -65,9 +71,9 @@ Stated up front, because the three artifacts here are at very different maturiti
 
 | artifact | state |
 | --- | --- |
-| basis-pair book | mature. 72 pairs, every label witnessed, three independent adjudication rounds against it |
-| resolution-rule change log | mature in method, empty in content. 5,034 markets have more than one capture and no rule digest has moved yet |
-| divergence series | **days old, and shallow.** 120 book snapshots over 1.34 hours, and zero basis pairs have a book on both venues, so there is no cross-venue price series in this release at all |
+| basis-pair book | mature. Every label witnessed, three independent adjudication rounds against it. Its size is the `basis pairs` row of the snapshot block |
+| resolution-rule change log | mature in method. How much it holds is the `rule changes logged` row of the snapshot block, and which markets moved is `rules_digests_observed` in the metadata |
+| divergence series | **the youngest artifact here, and shallow.** Its depth is `book_snapshots` over `analysis_window.hours` in `data/series-status.json`, and while `basis_pairs_with_books_on_both_venues` is zero there is no cross-venue price series at all |
 
 The divergence series accrues with every capture cycle and is the artifact that gets better with
 time. Book selection is currently liquidity-ranked per venue, which is not a match and should not be
@@ -150,11 +156,19 @@ the other a sixty-second mean.
 
 Every derived label a record carries must be supported by a token or phrase in the evidence stored
 beside it, and the emit path fails closed: a record whose label cannot be witnessed raises an
-internal defect and is never written. Four labels are checked per leg: the settlement index (against
+internal defect and is never written. Five things are checked per leg: the settlement index (against
 `settlement_evidence`, with `settlement_index_witness` naming the exact deciding token), the
-functional kind (against the phrase read from the rules), the quote currency (against a trading pair
-in the rules or the named index), and the strike unit (against the unit basis recorded in the strike
+operative clause that token was read out of (`settlement_index_clause`, the venue's own words
+verbatim), the functional kind (against the phrase read from the rules, which has to state the window
+length and the position preposition itself), the quote currency (against a trading pair in the rules
+or the named index), and the strike unit (against the unit basis recorded in the strike
 evidence). `unknown` never needs a witness, because it claims nothing.
+
+The clause is what makes the POLARITY checkable. A token proves a source was named, never that it was
+endorsed: "the proprietary exchange feed, not Binance, determines the result" yields the same
+`text:binance` as a rule that settles off Binance, and the old token-only witness read that rejection
+as an endorsement. Re-running the non-endorsing strip over the stored clause answers it from the
+record alone, which is why the clause is published beside the token rather than left in the corpus.
 
 This exists because all three defects independent adjudication found reduce to the same shape: a
 label asserted more confidently than its own evidence supported. Each was found by a human reading
@@ -188,8 +202,9 @@ What each round found and what happened to it:
 **The verdicts in `audits/` are historical.** Every round adjudicated the book as it stood at that
 moment, each finding was fixed, and each fix was independently re-verified before the cycle closed.
 The data published here is the post-fix book. The round-3 final confirmation re-ran eleven checks
-over it and reports the witness mapping as a clean bijection across all 986 records, which
-`scripts/verify.mjs` reproduces here without access to the pipeline.
+over the seed release and reported the witness mapping as a clean bijection across all 986 records it
+then held, which `scripts/verify.mjs` reproduces here, on whatever book is current, without access to
+the pipeline.
 
 **No false-match rate is claimed for the published book,** and that is not the same as claiming
 zero. The current book asserts no matches, so "false match" has no denominator in it; what a reader
@@ -203,7 +218,7 @@ as documents rather than fed back into the generator as input.
 node scripts/verify.mjs
 ```
 
-Node 22, no dependencies, no network, no access to the pipeline that produced the data. Seventeen
+Node 22, no dependencies, no network, no access to the pipeline that produced the data. Twenty-nine
 checks over `data/` alone:
 
 - every record parses, carries its schema tag, sits in the class its file claims, and names one
@@ -211,7 +226,13 @@ checks over `data/` alone:
 - the witness bijection: every settlement label is supported by a token in its own evidence, the
   witness-to-index mapping is one-to-one, and every witness token and functional phrase appears
   verbatim in that leg's published rule text
-- `close_delta_ms` is exactly zero and both legs agree on `close_ms`, on all 72 basis pairs
+- every settlement index is witnessed by an operative clause that ENDORSES it rather than rejecting
+  it, and that clause is quotable verbatim back out of the venue's own rule text
+- every unit label is one its own recorded basis can establish: a comma-grouped magnitude says the
+  number is at least a thousand, not that it is dollars
+- every functional label is re-read from the phrase stored beside it, including the window length and
+  the position preposition, so "before", "after" and "centered on" cannot share one record
+- `close_delta_ms` is exactly zero and both legs agree on `close_ms`, on every basis pair
 - the cent bridge is exact: the Kalshi floor plus one cent is the Polymarket floor, compared as
   integers so no float touches a strike
 - degree 1: no market appears in two basis pairs, so the book is a perfect matching
@@ -220,9 +241,32 @@ checks over `data/` alone:
 - four caveats on every record in the published order, each naming the labels it describes
 - the knife-edge caveat fires on exactly the one-tick records and nowhere else
 - no `identical` or `near-equivalent` record exists anywhere, which is the headline finding
-- market metadata covers every published leg, all with rule text, all on one stable rule digest
-- the rule-change log and the metadata agree on how many digests moved
+- market metadata covers every published leg, all with rule text, each naming a current digest that
+  is among the ones it records having observed
+- every digest this dataset publishes, in any of the four files, is 64 lowercase hexadecimal
+  characters
+- every rule digest is re-derived by hashing the rule text published beside it, so swapping two
+  markets' digests is detectable from `data/` alone. The superseded digests in
+  `rules_digests_observed` are NOT re-derivable, because only the current text of each rule is
+  published, and the check says so rather than passing quietly
+- every rule-change record carries the full published change schema, field by field and type by type,
+  down to the shape of each diff operation
+- every change window runs forward, and its stated length is exactly the distance between the two
+  instants it names
+- each market's changes are logged in chronological, non-overlapping order, so two changes cannot
+  claim to have been observed inside each other
+- every logged change is a genuine digest transition rather than a record of nothing moving
+- every change's diff, `fields_changed` and `material` flag agree with its own classification: a
+  record cannot claim a threshold moved while showing a diff in which nothing did
+- the rule-change log and the metadata tell the same story market by market: an unbroken walk through
+  the digests the metadata observed, ending on the digest the market carries now. This is a
+  consistency check and deliberately not a stability check, because a moved rule is the event this
+  dataset exists to catch
 - `series-status.json` counts sum to the book and its availability flag matches its own counts
+- `data/` holds exactly the published manifest, so nothing can sit in the published tree with nothing
+  ever opening it
+- the current-snapshot block's headline values are re-read out of the block and re-derived from the
+  data they describe, so a landing page that misdescribes its own download fails the gate
 - the CSV render agrees with the JSONL book row for row on every shared field
 
 The verifier is checked against mutation: reintroducing the round-3 index defect, breaking the cent
@@ -237,14 +281,16 @@ here is the emitted book plus everything needed to audit it from the outside.
 
 ```
 data/            the dataset (CC BY 4.0)
+  current-snapshot.md    what this release actually holds, machine-written on every rollup
 audits/          three independent adjudication rounds, verbatim
 scripts/         verify.mjs, the self-audit (MIT)
 charts/          strike-ladder.svg
 ```
 
-### `data/basis-pairs.jsonl` (72 records, `t3.match.v1`)
+### `data/basis-pairs.jsonl` (`t3.match.v1`)
 
-The emitted book, one JSON object per line, verbatim from the analysis run. Top-level fields:
+The emitted book, one JSON object per line, verbatim from the analysis run. Its line count is the
+`basis pairs` row of `data/current-snapshot.md`. Top-level fields:
 
 | field | meaning |
 | --- | --- |
@@ -276,35 +322,37 @@ Each leg (`polymarket`, `kalshi`) carries:
 | `settlement_index` | the data feed the outcome is read off (`binance`, `cf-benchmarks-brti`, `cf-benchmarks-erti`) |
 | `settlement_evidence` | every evidence token found, as `text:<token>` or `url:<host>` |
 | `settlement_index_witness` | the exact token that decided `settlement_index`. Always a member of `settlement_evidence` |
+| `settlement_index_clause` | the verbatim clause of the venue's text the witness was read out of, which is what carries the polarity a bare token does not |
 | `settlement_basis` | which field decided it (`primary-rules`, `settlement-url`, `secondary-rules`, ambiguous variants) |
 | `settlement_functional` | how the outcome is measured: `kind` (`point-close`, `window-mean`), `window_ms`, `window_position` (`ends-at-close`, `precedes-close`), `quote_currency`, `quote_witness`, `rules_digest`, and `evidence`, the verbatim phrase from the rule text |
 | `strike` | `floor`, `cap`, `relation`, `bound` (`exclusive` or `inclusive`), `unit`, `confidence` (`parsed` or `structural`), and `evidence`, the text the strike was read from including the bridging note |
 
-### `data/basis-pairs.csv` (72 rows, 37 columns)
+### `data/basis-pairs.csv` (37 columns)
 
-A flat render of the same 72 records for spreadsheet and dataframe use, sorted by entity, then close,
-then strike. Columns are the JSONL fields with the leg prefixed: `pair_id`, `entity`, `entity_label`,
-`polymarket_market_id`, `polymarket_ticker`, `polymarket_title`, `kalshi_ticker`, `kalshi_title`,
-`kalshi_subtitle`, `polymarket_strike_floor`, `polymarket_strike_bound`, `polymarket_relation`,
-`kalshi_strike_floor`, `kalshi_strike_bound`, `kalshi_relation`, `strike_gap` (Polymarket floor minus
-Kalshi floor, in quote units, 0.01 on every row), `close_time_utc`, `close_ms`, `close_delta_ms`,
-`polymarket_settlement_index`, `kalshi_settlement_index`, `polymarket_quote_currency`,
-`kalshi_quote_currency`, `polymarket_functional_kind`, `polymarket_window_ms`,
-`polymarket_window_position`, `kalshi_functional_kind`, `kalshi_window_ms`,
-`kalshi_window_position`, `polymarket_resolver`, `kalshi_resolver`, `score_total`, `failed_gates`,
-`caveat_index_basis`, `caveat_quote_currency_basis`, `caveat_measurement_window_basis`,
-`caveat_threshold`. The four caveats are carried in full so a row cannot be quoted without them.
+A flat render of the same records for spreadsheet and dataframe use, one row per basis pair, sorted
+by entity, then close, then strike. Columns are the JSONL fields with the leg prefixed: `pair_id`,
+`entity`, `entity_label`, `polymarket_market_id`, `polymarket_ticker`, `polymarket_title`,
+`kalshi_ticker`, `kalshi_title`, `kalshi_subtitle`, `polymarket_strike_floor`,
+`polymarket_strike_bound`, `polymarket_relation`, `kalshi_strike_floor`, `kalshi_strike_bound`,
+`kalshi_relation`, `strike_gap` (Polymarket floor minus Kalshi floor, in quote units, 0.01 on every
+row), `close_time_utc`, `close_ms`, `close_delta_ms`, `polymarket_settlement_index`,
+`kalshi_settlement_index`, `polymarket_quote_currency`, `kalshi_quote_currency`,
+`polymarket_functional_kind`, `polymarket_window_ms`, `polymarket_window_position`,
+`kalshi_functional_kind`, `kalshi_window_ms`, `kalshi_window_position`, `polymarket_resolver`,
+`kalshi_resolver`, `score_total`, `failed_gates`, `caveat_index_basis`,
+`caveat_quote_currency_basis`, `caveat_measurement_window_basis`, `caveat_threshold`. The four
+caveats are carried in full so a row cannot be quoted without them.
 
-### `data/related-pairs.jsonl` (914 records, `t3.match.v1`)
+### `data/related-pairs.jsonl` (`t3.match.v1`)
 
 Same schema, `equivalence_class` of `related`: same entity, close times within 24 hours, different
 question shape. **Context only, and excluded from the headline.** It is published because it is where
-the gates show their work: 440 of these sit at exactly one hour of close delta, which is the
+the gates show their work: the records sitting at exactly one hour of close delta are the
 wrong-hour-twin family that round 1 caught being emitted as matches and that the hard instant gate
 now demotes. A reader checking whether the gates do anything should read this file. Nothing here is
-a match, and the 88 records in it that carry knife-edge threshold wording are still not matches.
+a match, and the records in it that carry knife-edge threshold wording are still not matches.
 
-### `data/market-metadata.jsonl` (272 records, `t3.market-metadata.v1`)
+### `data/market-metadata.jsonl` (`t3.market-metadata.v1`)
 
 One record per market appearing anywhere in the two pair files, which is what makes the pair records
 auditable against source rather than against their own summary fields.
@@ -317,7 +365,7 @@ auditable against source rather than against their own summary fields.
 | `close_ms`, `close_utc` | listed close |
 | `resolver` | adjudication mechanism |
 | `rules_digest` | digest of the rule text at last capture; equals `settlement_functional.rules_digest` on the pair records |
-| `rules_digests_observed` | every distinct rule digest seen across this market's captures. Length 1 everywhere in this release, which is the rule-change log's zero restated per market |
+| `rules_digests_observed` | every distinct rule digest seen across this market's captures. Length above 1 is a market whose rule moved, and the change log accounts for every step of that walk |
 | `rules_text` | the venue's operative resolution rule, verbatim |
 | `rules_secondary` | the venue's explanatory text, verbatim. Kept because it routinely names sources it is telling you not to use, and reading it as an endorsement is a live failure mode |
 | `source_urls` | resolution source URLs published by the venue |
@@ -327,10 +375,12 @@ auditable against source rather than against their own summary fields.
 
 ### `data/rule-changes.jsonl` and `data/rule-changes.md`
 
-The resolution-rule change log. **Currently empty:** 5,034 markets have more than one capture and no
-rule digest has moved. The `.md` states the method and why every future count is a lower bound. A
-detected change carries the normalized text diff, a material-versus-cosmetic classification, and the
-capture window it happened inside rather than an instant it happened at.
+The resolution-rule change log. How much it holds is the `rule changes logged` row of
+`data/current-snapshot.md`, and which published markets moved is `rules_digests_observed` in the
+metadata; an empty log alongside single-digest metadata means no rule moved, not that nothing was
+watched. The `.md` states the method and why every count is a lower bound. A detected change carries
+the normalized text diff, a material-versus-cosmetic classification, and the capture window it
+happened inside rather than an instant it happened at.
 
 ### `data/series-status.json` (`t3.series-status.v1`)
 
@@ -338,7 +388,17 @@ The divergence series' depth, stated honestly rather than implied by a snapshot 
 analysis window, the per-cycle market and book capture counts, the acquisition endpoints and runner,
 the book depth stored per side, the distinct markets with a book per venue, and the divergence block:
 how many basis pairs have books on both venues, one venue, or neither, plus
-`cross_venue_price_series_available`, which is false in this release.
+`cross_venue_price_series_available`, which is true only once that both-venues count is above zero.
+
+### `data/current-snapshot.md`
+
+The counts that move, machine-written by the rollup that published these files and spliced into this
+README between two comment markers. It names the run, the capture window and its length, the size of
+each published file, how many rule changes are logged, the book-snapshot count and whether a
+cross-venue price series exists yet. It is published as a data file rather than left as a README edit
+so it is part of the verified dataset: `scripts/verify.mjs` re-reads every row out of it and
+re-derives the value from the data it describes. Where the prose here and that block disagree, the
+block is what you downloaded.
 
 ### `audits/`
 
@@ -349,17 +409,27 @@ what was reproduced verbatim and the two disclosed edits.
 
 ### `charts/strike-ladder.svg`
 
-Strike-ladder coverage of the 72 basis pairs: four panels, two assets across two hourly expiries,
-one rung per emitted pair with both legs' floors marked.
+Strike-ladder coverage of the emitted book: one panel per asset and listed close, one rung per
+emitted pair with both legs' floors marked. The chart's own header states how many pairs it drew and
+its footer how many closes and assets that was.
 
-Each panel has exactly one dashed rung, and it is worth reading. Those are Kalshi contracts whose
-same-strike Polymarket counterpart is one hour away rather than at the same listed close, because
-the same-hour Polymarket contract is not in the capture. The hard measurement-instant gate refuses
-to pair them and demotes them to `related`, which is precisely the failure round 1 found being
-emitted as matches. The gate's effect is visible as a hole in the ladder.
+The dashed rungs are worth reading. A dashed rung is a strike the venues' own ladder spacing implies
+but which this capture emitted no pair for, which is the difference between "the venues do not list
+this" and "this tool did not pair it": a row count cannot tell those two apart. Where the same strike
+does exist on the other venue at a different listed close, the hard measurement-instant gate refuses
+to pair the two and demotes them to `related`, which is precisely the failure round 1 found being
+emitted as matches, and the gate's effect is visible as a hole in the ladder.
 
-It is deliberately the only chart here. Any chart of the divergence series would be drawing 1.34
-hours of one-sided book snapshots, and there is nothing honest to plot yet.
+How far away that counterpart sits is measured, per rung, from the related book, and never asserted.
+Each dashed rung carries an SVG `<title>` naming its own nearest same-strike counterpart distance, or
+saying there is no such counterpart anywhere in this capture, and the footer prints the distribution
+of the distances actually observed. An earlier version of this page claimed the counterpart was
+always one hour away. That was true of the four holes in the seed release and had never been derived
+from anything; on the grown book the measured distances run to many hours.
+
+It is deliberately the only chart here. Any chart of the divergence series would be drawing the
+one-sided book snapshots `data/series-status.json` counts, and while no basis pair has a book on both
+venues there is nothing honest to plot yet.
 
 ## Licensing
 
@@ -367,7 +437,8 @@ Dual-licensed, because the code and the data are different things.
 
 - **`scripts/` is MIT.** See `LICENSE`.
 - **`data/`, `audits/` and `charts/` are CC BY 4.0.** See `data/LICENSE`. Attribution: gaabsoares,
-  cross-venue prediction-market basis dataset, run `97946cfda9a9`.
+  cross-venue prediction-market basis dataset, citing the `run_id` in `data/series-status.json` for
+  the release you used.
 
 **One carve-out.** The `rules_text` and `rules_secondary` fields in `data/market-metadata.jsonl`, and
 the `title`, `subtitle` and rule-derived `evidence` strings quoted inside the pair records, are
@@ -384,7 +455,14 @@ hand-entered numbers at analysis time. Rerunning the analysis over an unchanged 
 identical bytes, so any diff means the data moved. The published files are the emitted book verbatim
 plus renders of it.
 
+The daily rollup writes the derived files and nothing else, and the set it may write is an exact
+manifest: a file staged under `data/` or `charts/` that is in neither the derived manifest nor the
+hand-authored list stops the publish rather than being deleted, and the verifier re-checks that same
+manifest from the published tree. The one part of this page the job touches is the snapshot block,
+which it rewrites between the two markers and refuses to write at all if the splice would have moved
+a byte of hand-authored prose.
+
 The counts in this README that `scripts/verify.mjs` can reach from `data/` alone are re-derived on
-every push. The ones it cannot, notably the 5,034 markets holding more than one capture and the
-34,594 retained candidates, come from parts of the corpus that are not published here and are
-reported rather than reproduced.
+every push. The ones it cannot, notably the size of the capture corpus behind the change log and the
+retained-candidate set the matcher scored, come from parts of the corpus that are not published here
+and are reported rather than reproduced.

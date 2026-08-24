@@ -18,10 +18,10 @@
     "tool_version": "0.1.0"
   },
   "analysis_window": {
-    "end": "2026-08-20T01:48:02.294Z",
-    "hours": 14.04,
+    "end": "2026-08-24T18:55:33.955Z",
+    "hours": 127.17,
     "start": "2026-08-19T11:45:30.313Z",
-    "utc_days": 2
+    "utc_days": 6
   },
   "book_capture_cycles": [
     {
@@ -47,19 +47,95 @@
     {
       "book_snapshots": 30,
       "captured_at": "2026-08-20T01:48:02.294Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-20T07:02:49.331Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-20T13:07:54.593Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-20T18:55:50.421Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-21T01:54:23.594Z"
+    },
+    {
+      "book_snapshots": 28,
+      "captured_at": "2026-08-21T07:03:51.093Z"
+    },
+    {
+      "book_snapshots": 28,
+      "captured_at": "2026-08-21T13:06:30.490Z"
+    },
+    {
+      "book_snapshots": 24,
+      "captured_at": "2026-08-21T18:52:22.095Z"
+    },
+    {
+      "book_snapshots": 26,
+      "captured_at": "2026-08-22T01:46:47.213Z"
+    },
+    {
+      "book_snapshots": 20,
+      "captured_at": "2026-08-22T06:56:32.415Z"
+    },
+    {
+      "book_snapshots": 20,
+      "captured_at": "2026-08-22T12:57:26.391Z"
+    },
+    {
+      "book_snapshots": 16,
+      "captured_at": "2026-08-22T18:45:35.762Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-23T01:56:58.881Z"
+    },
+    {
+      "book_snapshots": 26,
+      "captured_at": "2026-08-23T06:57:21.683Z"
+    },
+    {
+      "book_snapshots": 26,
+      "captured_at": "2026-08-23T12:58:43.852Z"
+    },
+    {
+      "book_snapshots": 26,
+      "captured_at": "2026-08-23T18:45:18.119Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-24T01:54:40.765Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-24T07:16:15.786Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-24T13:09:37.157Z"
+    },
+    {
+      "book_snapshots": 30,
+      "captured_at": "2026-08-24T18:55:33.955Z"
     }
   ],
   "book_depth_levels_per_side": 10,
-  "book_snapshots": 180,
+  "book_snapshots": 690,
   "depth_statement": "The divergence series is the shallow artifact in this release and accrues with each capture cycle. The basis-pair book and the rule-change log are the mature ones.",
   "distinct_markets_with_a_book": {
-    "kalshi": 20,
-    "polymarket": 20
+    "kalshi": 60,
+    "polymarket": 117
   },
   "divergence_series": {
     "basis_pairs_with_a_book_on_one_venue_only": 0,
     "basis_pairs_with_books_on_both_venues": 0,
-    "basis_pairs_with_no_book_at_all": 108,
+    "basis_pairs_with_no_book_at_all": 609,
     "cross_venue_price_series_available": false,
     "note": "A divergence series requires both legs of a pair snapshotted at the same instant. Book selection is liquidity-ranked per venue, which is not a match and was never meant to be read as one. Until the both-venues count is above zero there is no cross-venue price series in this dataset, whatever the raw snapshot count says."
   },
@@ -88,9 +164,85 @@
     {
       "captured_at": "2026-08-20T01:47:47.214Z",
       "market_records_appended": 3864
+    },
+    {
+      "captured_at": "2026-08-20T07:02:38.910Z",
+      "market_records_appended": 2524
+    },
+    {
+      "captured_at": "2026-08-20T13:07:39.799Z",
+      "market_records_appended": 3628
+    },
+    {
+      "captured_at": "2026-08-20T18:55:37.699Z",
+      "market_records_appended": 3822
+    },
+    {
+      "captured_at": "2026-08-21T01:54:10.808Z",
+      "market_records_appended": 3674
+    },
+    {
+      "captured_at": "2026-08-21T07:03:38.814Z",
+      "market_records_appended": 3458
+    },
+    {
+      "captured_at": "2026-08-21T13:06:17.162Z",
+      "market_records_appended": 3660
+    },
+    {
+      "captured_at": "2026-08-21T18:52:08.735Z",
+      "market_records_appended": 3660
+    },
+    {
+      "captured_at": "2026-08-22T01:46:32.614Z",
+      "market_records_appended": 3878
+    },
+    {
+      "captured_at": "2026-08-22T06:56:17.752Z",
+      "market_records_appended": 3871
+    },
+    {
+      "captured_at": "2026-08-22T12:57:11.655Z",
+      "market_records_appended": 3780
+    },
+    {
+      "captured_at": "2026-08-22T18:45:22.326Z",
+      "market_records_appended": 3564
+    },
+    {
+      "captured_at": "2026-08-23T01:56:44.189Z",
+      "market_records_appended": 3903
+    },
+    {
+      "captured_at": "2026-08-23T06:57:07.137Z",
+      "market_records_appended": 3783
+    },
+    {
+      "captured_at": "2026-08-23T12:58:31.210Z",
+      "market_records_appended": 3828
+    },
+    {
+      "captured_at": "2026-08-23T18:45:03.183Z",
+      "market_records_appended": 3544
+    },
+    {
+      "captured_at": "2026-08-24T01:54:24.115Z",
+      "market_records_appended": 3835
+    },
+    {
+      "captured_at": "2026-08-24T07:16:00.945Z",
+      "market_records_appended": 3817
+    },
+    {
+      "captured_at": "2026-08-24T13:09:22.039Z",
+      "market_records_appended": 3642
+    },
+    {
+      "captured_at": "2026-08-24T18:55:21.421Z",
+      "market_records_appended": 3302
     }
   ],
-  "run_id": "10ee67110d5f",
+  "run_id": "f7a99bbc21c5",
   "scheduled_cadence": "every 6 hours on GitHub-hosted US runners; the cycles above include manual reruns, so they are not evenly spaced",
   "schema": "t3.series-status.v1"
 }

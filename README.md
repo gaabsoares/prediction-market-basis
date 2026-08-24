@@ -264,7 +264,7 @@ checks over `data/` alone:
   dataset exists to catch
 - `series-status.json` counts sum to the book and its availability flag matches its own counts
 - `data/` holds exactly the published manifest, so nothing can sit in the published tree with nothing
-  ever opening it
+  ever opening it, and a superseded file left beside its replacement is named and refused
 - the current-snapshot block's headline values are re-read out of the block and re-derived from the
   data they describe, so a landing page that misdescribes its own download fails the gate
 - the CSV render agrees with the JSONL book row for row on every shared field
@@ -282,6 +282,7 @@ here is the emitted book plus everything needed to audit it from the outside.
 ```
 data/            the dataset (CC BY 4.0)
   current-snapshot.md    what this release actually holds, machine-written on every rollup
+  related-pairs.jsonl.gz gzipped: the related book is past GitHub's 100MB file limit
 audits/          three independent adjudication rounds, verbatim
 scripts/         verify.mjs, the self-audit (MIT)
 charts/          strike-ladder.svg
@@ -343,7 +344,11 @@ row), `close_time_utc`, `close_ms`, `close_delta_ms`, `polymarket_settlement_ind
 `caveat_quote_currency_basis`, `caveat_measurement_window_basis`, `caveat_threshold`. The four
 caveats are carried in full so a row cannot be quoted without them.
 
-### `data/related-pairs.jsonl` (`t3.match.v1`)
+### `data/related-pairs.jsonl.gz` (`t3.match.v1`)
+
+Gzip-compressed, because the related book is larger than GitHub's 100MB per-file limit. `zcat
+data/related-pairs.jsonl.gz`, `gunzip -c`, or any gzip-aware reader gives the plain JSONL, and
+`scripts/verify.mjs` decompresses it in place. Every other published file is plain text.
 
 Same schema, `equivalence_class` of `related`: same entity, close times within 24 hours, different
 question shape. **Context only, and excluded from the headline.** It is published because it is where

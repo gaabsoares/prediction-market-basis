@@ -13,6 +13,7 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gunzipSync } from 'node:zlib';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
@@ -101,8 +102,26 @@ function at(record) {
   return SOURCE.get(record) ?? 'an unpublished record';
 }
 
+/**
+ * Reads a published book, decompressing it when the name says it is compressed.
+ *
+ * The related book outgrew GitHub's 100 MB hard file limit, so it ships gzipped. Nothing else about
+ * this script changes: every check below reads the decompressed rows, and a line number still counts
+ * lines of the JSONL a reader gets from `zcat`, not bytes of the container.
+ */
 function readJsonl(file) {
-  const text = readFileSync(join(dataDir, file), 'utf8');
+  const raw = readFileSync(join(dataDir, file));
+  let text;
+  if (file.endsWith('.gz')) {
+    try {
+      text = gunzipSync(raw).toString('utf8');
+    } catch {
+      // the zlib message can quote the bytes it choked on, so the file name is the whole report
+      throw new Error(`${file} is not readable as gzip`);
+    }
+  } else {
+    text = raw.toString('utf8');
+  }
   if (text === '') return [];
   return text
     .split('\n')
@@ -144,7 +163,7 @@ function tickFor(a, b) {
 }
 
 const basis = readJsonl('basis-pairs.jsonl');
-const related = readJsonl('related-pairs.jsonl');
+const related = readJsonl('related-pairs.jsonl.gz');
 const metadata = readJsonl('market-metadata.jsonl');
 const ruleChanges = readJsonl('rule-changes.jsonl');
 const series = JSON.parse(readFileSync(join(dataDir, 'series-status.json'), 'utf8'));
@@ -1010,13 +1029,23 @@ const DERIVED_DATA_FILES = [
   'basis-pairs.jsonl',
   'current-snapshot.md',
   'market-metadata.jsonl',
-  'related-pairs.jsonl',
+  'related-pairs.jsonl.gz',
   'rule-changes.jsonl',
   'rule-changes.md',
   'series-status.json',
 ];
 /** Hand-authored, so its absence from a bare derivation is not a defect; its presence is expected in the repository. */
 const PUBLISHED_DATA_FILES = [...DERIVED_DATA_FILES, 'LICENSE'];
+
+/**
+ * Names this dataset used to publish, and what replaced each one.
+ *
+ * A superseded file left beside its replacement is worse than an unrecognised one: it is a second,
+ * plausible copy of a book that nothing here opens, so a reader who downloads it gets a stale answer
+ * with no signal that it is stale. Named explicitly rather than left to the unrecognised-file rule so
+ * the failure says what happened and what to delete.
+ */
+const SUPERSEDED_DATA_FILES = { 'related-pairs.jsonl': 'related-pairs.jsonl.gz' };
 
 check('the data directory holds exactly the files this dataset publishes', () => {
   const present = readdirSync(dataDir, { withFileTypes: true })
@@ -1027,6 +1056,11 @@ check('the data directory holds exactly the files this dataset publishes', () =>
     if (!present.includes(name)) fail(`the manifest names ${name}, which is not published here`);
   }
   for (const name of present) {
+    const replacement = SUPERSEDED_DATA_FILES[name];
+    if (replacement !== undefined) {
+      fail(`${name} is superseded by ${replacement} and must not be published beside it`);
+      continue;
+    }
     if (!PUBLISHED_DATA_FILES.includes(name)) fail(`${name} is published here but is in no manifest, so nothing checks it`);
   }
   return `${present.length} files, exactly the published manifest`;

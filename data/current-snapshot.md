@@ -7,13 +7,13 @@ historical: where the two disagree, this table describes the files you are downl
 
 | field | value |
 | --- | --- |
-| run id | 572d3d406456 |
-| capture window | 2026-08-19T11:45:30.313Z to 2026-08-25T01:48:23.425Z, 7 UTC day(s) |
-| window hours | 134.05 |
-| basis pairs | 645 |
-| related pairs | 33533 |
-| markets with published rules | 4683 |
+| run id | 4e61ca7524b5 |
+| capture window | 2026-08-19T11:45:30.313Z to 2026-08-26T01:54:34.975Z, 8 UTC day(s) |
+| window hours | 158.15 |
+| basis pairs | 717 |
+| related pairs | 39188 |
+| markets with published rules | 5354 |
 | rule changes logged | 0 |
-| book snapshots | 720 |
+| book snapshots | 806 |
 | cross-venue price series | not available yet |
 <!-- END T3 CURRENT SNAPSHOT -->
